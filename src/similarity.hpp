@@ -12,8 +12,8 @@ private:
     Point p;
     cv::Mat output_img;
 
-    void ExtractCandidates_max();
     void ExtractCandidates_min();
+    void ExtractCandidates_max();
     void Bounding_box();
 public:
 
@@ -28,8 +28,6 @@ public:
     void SSD(); //Sum of Squared Difference
     void NCC(); //Normalized Cross-Correlation
     void ZNCC(); //Zero-means Normalized Cross-Correlation
-    void Fast_ZNCC(); //Zero-means Normalized Cross-Correlation (fast)
-    
 
     Smr(cv::Mat temp_img, cv::Mat input_img, cv::Mat temp_mask = cv::Mat());
     ~Smr();

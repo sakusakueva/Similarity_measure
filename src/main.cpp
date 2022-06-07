@@ -14,8 +14,9 @@ int main(void){
     input_img = cv::imread("image/input.bmp", cv::IMREAD_GRAYSCALE);
 
     start = std::chrono::system_clock::now();               //計測スタート
+    
     Smr test(temp_img, input_img);
-    test.SAD();
+    test.ZNCC();
 
     // タイムの表示
     end = std::chrono::system_clock::now();                 // 計測終了

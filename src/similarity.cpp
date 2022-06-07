@@ -34,6 +34,21 @@ void Smr::ExtractCandidates_min(){
     return;
 }
 
+void Smr::ExtractCandidates_max(){
+    int max = -9999;
+    // Roop (input image)
+    for(int jj = 0; jj < this->roop_h; jj++){
+        for(int ii = 0; ii < this->roop_w; ii++){
+            if(max < this->score_map.at<int>(jj, ii)){
+                max = this->score_map.at<int>(jj,ii);
+                this->p.x = ii;
+                this->p.y = jj;
+            }
+        }
+    }
+    return;
+}
+
 void Smr::Bounding_box(){
     cv::cvtColor(input_img, output_img, CV_GRAY2BGR);
     cv::Rect rect1(p.x-1, p.y-1, temp_width+2, temp_height+2);
@@ -44,30 +59,13 @@ void Smr::Bounding_box(){
     return;
 }
 
-void Smr::ZNCC(){
-    unsigned char in_val, temp_val;
-
-    // Roop (input image)
-    for(int jj = 0; jj < this->input_img.rows-temp_height+1; jj++){
-        for(int ii = 0; ii < this->input_img.cols-temp_width+1; ii++){
-            // Roop (ROI)
-            for(int j = 0; j < this->temp_height; j++){
-                for(int i = 0; i < this->temp_width; i++){
-                    in_val = this->input_img.at<unsigned char>(jj+j, ii+i);
-                    temp_val = this->temp_mask.at<unsigned char>(j, i) * this->temp_img.at<unsigned char>(j, i);
-                }
-            }
-        }
-    }
-    return;
-}
-
+// OK
 void Smr::SAD(){
     unsigned char in_val, temp_val;
 
     // Roop (input image)
-    for(int jj = 0; jj < this->input_img.rows-temp_height+1; jj++){
-        for(int ii = 0; ii < this->input_img.cols-temp_width+1; ii++){
+    for(int jj = 0; jj < this->roop_h; jj++){
+        for(int ii = 0; ii < this->roop_w; ii++){
             // Roop (ROI)
             for(int j = 0; j < this->temp_height; j++){
                 for(int i = 0; i < this->temp_width; i++){
@@ -79,6 +77,81 @@ void Smr::SAD(){
         }
     }
     ExtractCandidates_min();
+    Bounding_box();
+    return;
+}
+
+// OK
+void Smr::SSD(){
+    unsigned char in_val, temp_val;
+
+    // Roop (input image)
+    for(int jj = 0; jj < this->roop_h; jj++){
+        for(int ii = 0; ii < this->roop_w; ii++){
+            // Roop (ROI)
+            for(int j = 0; j < this->temp_height; j++){
+                for(int i = 0; i < this->temp_width; i++){
+                    in_val = this->input_img.at<unsigned char>(jj+j, ii+i);
+                    temp_val = this->temp_mask.at<unsigned char>(j, i) * this->temp_img.at<unsigned char>(j, i);
+                    this->score_map.at<int>(jj, ii) += (in_val - temp_val)*(in_val - temp_val);
+                }
+            }
+        }
+    }
+    ExtractCandidates_min();
+    Bounding_box();
+    return;
+}
+
+// OK
+void Smr::NCC(){
+    int in_val, temp_val, in_temp, in, temp;
+
+    // Roop (input image)
+    for(int jj = 0; jj < this->roop_h; jj++){
+        for(int ii = 0; ii < this->roop_w; ii++){
+            in_temp = in = temp = 0;
+            // Roop (ROI)
+            for(int j = 0; j < this->temp_height; j++){
+                for(int i = 0; i < this->temp_width; i++){
+                    in_val = (int)this->input_img.at<unsigned char>(jj+j, ii+i);
+                    temp_val = (int)this->temp_mask.at<unsigned char>(j, i) * this->temp_img.at<unsigned char>(j, i);
+                    in_temp += in_val*temp_val; // 分子
+                    in += in_val*in_val;    temp += temp_val*temp_val; // 分母
+                }
+            }
+            this->score_map.at<int>(jj, ii) = (int)((double)in_temp / (double)(sqrt(in) * sqrt(temp)) * 100.0);
+        }
+    }
+    ExtractCandidates_max();
+    Bounding_box();
+    return;
+}
+
+void Smr::ZNCC(){
+    int in_val, temp_val, in_temp, in, temp;
+    int in_ave, temp_ave;
+
+    in_ave = cv::mean(this->input_img)[0];
+    temp_ave = cv::mean(this->temp_img)[0];
+
+    // Roop (input image)
+    for(int jj = 0; jj < this->roop_h; jj++){
+        for(int ii = 0; ii < this->roop_w; ii++){
+            in_temp = in = temp = 0;
+            // Roop (ROI)
+            for(int j = 0; j < this->temp_height; j++){
+                for(int i = 0; i < this->temp_width; i++){
+                    in_val = (int)this->input_img.at<unsigned char>(jj+j, ii+i) - in_ave;
+                    temp_val = (int)this->temp_mask.at<unsigned char>(j, i) * (this->temp_img.at<unsigned char>(j, i) - temp_ave);
+                    in_temp += in_val*temp_val; // 分子
+                    in += in_val*in_val;    temp += temp_val*temp_val; // 分母
+                }
+            }
+            this->score_map.at<int>(jj, ii) = (int)((double)in_temp / (double)(sqrt(in) * sqrt(temp)) * 100.0);
+        }
+    }
+    ExtractCandidates_max();
     Bounding_box();
     return;
 }
